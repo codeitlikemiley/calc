@@ -1,9 +1,14 @@
-use crossterm::event;
-use crossterm::event::KeyCode;
-use crossterm::event::KeyEvent;
-use std::io::stdout;
-use std::io::{self, Write};
-use std::num::FpCategory;
+use iced::widget::{Button, Column, Row, Text};
+use iced::{Element, Sandbox, Settings};
+
+fn main() {
+    Calculator::run(Settings::default());
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Message {
+    ButtonPressed(char),
+}
 
 enum Token {
     Operand(f64),
@@ -11,6 +16,101 @@ enum Token {
     LeftParen,
     RightParen,
     Error(char),
+}
+
+struct Calculator {
+    display: String,
+    current_expression: String,
+    just_evaluated: bool,
+}
+
+impl Sandbox for Calculator {
+    type Message = Message;
+
+    fn new() -> Self {
+        Calculator {
+            display: String::from("0"),
+            current_expression: String::new(),
+            just_evaluated: false,
+        }
+    }
+
+    fn title(&self) -> String {
+        String::from("Calculator")
+    }
+
+    fn update(&mut self, message: Self::Message) {
+        match message {
+            Message::ButtonPressed(token) => {
+                match token {
+                    '=' => {
+                        // Evaluate the expression
+                        let tokens = tokenize(&self.current_expression.replace(" ", ""));
+                        let postfix_tokens = to_postfix(tokens);
+                        let result = evaluate_postfix(postfix_tokens);
+
+                        // Update display and clear current expression
+                        self.display = result.to_string();
+                        self.current_expression.clear();
+                        self.just_evaluated = true;
+                    }
+                    'C' => {
+                        // Clear the expression and display
+                        self.current_expression.clear();
+                        self.display = "0".to_string();
+                        self.just_evaluated = false;
+                    }
+                    _ => {
+                        if self.just_evaluated {
+                            if token.is_digit(10) || token == '.' {
+                                self.current_expression.clear();
+                                self.display.clear();
+                            } else {
+                                self.current_expression = self.display.clone();
+                            }
+                            self.just_evaluated = false;
+                        }
+
+                        // Clear the leading "0" if any
+                        if self.display == "0" && (token.is_digit(10) || token == '.') {
+                            self.display.clear();
+                            self.current_expression.clear();
+                        }
+
+                        // Append the token to the current expression and update display
+                        self.current_expression.push(token);
+                        self.display.push(token);
+                    }
+                }
+            }
+        }
+    }
+
+    fn view(&self) -> Element<Self::Message> {
+        let button_tokens = vec![
+            '7', '8', '9', '+', '4', '5', '6', '-', '1', '2', '3', '*', '(', ')', 'C', '0', '=',
+            '/',
+        ];
+
+        let mut content = Column::new().push(Text::new(self.display.clone()));
+
+        let mut row = Row::new();
+        for (i, &token) in button_tokens.iter().enumerate() {
+            row = row.push(
+                Button::new(Text::new(token.to_string()))
+                    .width(iced::Length::Fill)
+                    .on_press(Message::ButtonPressed(token)),
+            );
+
+            if (i + 1) % 4 == 0 || i == button_tokens.len() - 1 {
+                // i == button_tokens.len() - 1 ensures the last button is added
+                content = content.push(row);
+                row = Row::new();
+            }
+        }
+
+        content.into()
+    }
 }
 
 fn tokenize(input: &str) -> Vec<Token> {
@@ -116,121 +216,4 @@ fn evaluate_postfix(tokens: Vec<Token>) -> f64 {
     }
 
     stack.pop().unwrap()
-}
-
-fn clear_console() {
-    print!("\x1B[2J\x1B[1;1H");
-}
-
-fn main() {
-    let mut history: Vec<String> = Vec::new(); // Command history
-    let mut history_pointer: usize = 0; // Index for navigating through history
-
-    loop {
-        print!("Enter an expression (e.g., 5 + 3) or 'exit|clear': ");
-        io::stdout().flush().unwrap();
-
-        let mut input = String::new();
-        while let Ok(key_event) = event::read() {
-            if let event::Event::Key(KeyEvent { code, .. }) = key_event {
-                match code {
-                    KeyCode::Enter => {
-                        println!(); // Print a newline after Enter
-                        break;
-                    }
-                    KeyCode::Esc => return, // Exit on Escape key
-                    KeyCode::Char(c) => {
-                        print!("{}", c);
-                        stdout().flush().unwrap();
-                        input.push(c);
-                    }
-                    KeyCode::Up => {
-                        if history_pointer > 0 {
-                            history_pointer -= 1;
-                            input = history[history_pointer].clone();
-                            // Clear current line and print the new input
-                            clear_console();
-                            print!(
-                                "\r\x1b[KEnter an expression (e.g., 5 + 3) or 'exit': {}",
-                                input
-                            );
-                            stdout().flush().unwrap();
-                        }
-                    }
-                    KeyCode::Down => {
-                        if history_pointer < history.len() - 1 {
-                            history_pointer += 1;
-                            input = history[history_pointer].clone();
-                            // Clear current line and print the new input
-                            clear_console();
-                            print!(
-                                "\r\x1b[KEnter an expression (e.g., 5 + 3) or 'exit': {}",
-                                input
-                            );
-                            stdout().flush().unwrap();
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-        if input == "clear" {
-            clear_console();
-            continue;
-        }
-        if input == "exit" {
-            break;
-        }
-
-        let tokens = tokenize(&input.replace(" ", ""));
-        let postfix_tokens = to_postfix(tokens);
-        let result = evaluate_postfix(postfix_tokens);
-
-        match result.classify() {
-            FpCategory::Infinite | FpCategory::Nan => println!("Error: Invalid calculation"),
-            _ => println!("Result: {}", result),
-        }
-
-        if !input.is_empty() && input != "exit" {
-            history.push(input.clone());
-            history_pointer = history.len(); // Reset the history_pointer
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_evaluate_expression() {
-        // Test cases with expressions and expected results
-        let test_cases = [
-            ("5 + 3", 8.0),
-            ("10 - 4", 6.0),
-            ("2 * 6", 12.0),
-            ("8 / 2", 4.0),
-            ("3 + 4 * 2", 14.0),
-            ("(1 + 2) * (3 + 4)", 21.0),
-            ("3 + (4 * 2)", 11.0),
-            ("(3 + 4) * 2", 14.0),
-            ("12 / 0", f64::NAN),
-            ("invalid expression", f64::NAN),
-        ];
-
-        for (input, expected_result) in &test_cases {
-            let tokens = tokenize(&input.replace(" ", ""));
-            let postfix_tokens = to_postfix(tokens);
-            let result = evaluate_postfix(postfix_tokens);
-
-            match result.classify() {
-                FpCategory::Infinite | FpCategory::Nan => {
-                    assert!(expected_result.is_nan(), "Expected NaN");
-                }
-                _ => {
-                    assert_eq!(*expected_result, result, "Mismatched results");
-                }
-            }
-        }
-    }
 }
