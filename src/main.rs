@@ -149,6 +149,7 @@ fn main() {
                             history_pointer -= 1;
                             input = history[history_pointer].clone();
                             // Clear current line and print the new input
+                            clear_console();
                             print!(
                                 "\r\x1b[KEnter an expression (e.g., 5 + 3) or 'exit': {}",
                                 input
@@ -161,6 +162,7 @@ fn main() {
                             history_pointer += 1;
                             input = history[history_pointer].clone();
                             // Clear current line and print the new input
+                            clear_console();
                             print!(
                                 "\r\x1b[KEnter an expression (e.g., 5 + 3) or 'exit': {}",
                                 input
