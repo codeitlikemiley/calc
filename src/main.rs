@@ -195,3 +195,40 @@ fn main() {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_evaluate_expression() {
+        // Test cases with expressions and expected results
+        let test_cases = [
+            ("5 + 3", 8.0),
+            ("10 - 4", 6.0),
+            ("2 * 6", 12.0),
+            ("8 / 2", 4.0),
+            ("3 + 4 * 2", 14.0),
+            ("(1 + 2) * (3 + 4)", 21.0),
+            ("3 + (4 * 2)", 11.0),
+            ("(3 + 4) * 2", 14.0),
+            ("12 / 0", f64::NAN),
+            ("invalid expression", f64::NAN),
+        ];
+
+        for (input, expected_result) in &test_cases {
+            let tokens = tokenize(&input.replace(" ", ""));
+            let postfix_tokens = to_postfix(tokens);
+            let result = evaluate_postfix(postfix_tokens);
+
+            match result.classify() {
+                FpCategory::Infinite | FpCategory::Nan => {
+                    assert!(expected_result.is_nan(), "Expected NaN");
+                }
+                _ => {
+                    assert_eq!(*expected_result, result, "Mismatched results");
+                }
+            }
+        }
+    }
+}
