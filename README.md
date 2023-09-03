@@ -1,5 +1,7 @@
 # Yet Another Calculator CLI built with Rust
 
+[![Rust Build and Test](https://github.com/codeitlikemiley/calc/actions/workflows/rust.yml/badge.svg)](https://github.com/codeitlikemiley/calc/actions/workflows/rust.yml)
+
 ## Installation
 
 ```bash
