@@ -1,8 +1,16 @@
 use iced::widget::{Button, Column, Row, Text};
-use iced::{Element, Sandbox, Settings};
+use iced::{Element, Sandbox};
 
 fn main() {
-    Calculator::run(Settings::default());
+    let settings = iced::Settings {
+        window: iced::window::Settings {
+            size: (250, 300),
+            resizable: false,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    Calculator::run(settings);
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -91,19 +99,26 @@ impl Sandbox for Calculator {
             '7', '8', '9', '+', '4', '5', '6', '-', '1', '2', '3', '*', '(', ')', 'C', '0', '=',
             '/',
         ];
-
-        let mut content = Column::new().push(Text::new(self.display.clone()));
+        let mut content = Column::new().push(
+            Text::new(self.display.clone())
+                .size(36)
+                .width(iced::Length::Fill)
+                .height(iced::Length::Fixed(55.0)),
+        );
 
         let mut row = Row::new();
         for (i, &token) in button_tokens.iter().enumerate() {
             row = row.push(
                 Button::new(Text::new(token.to_string()))
                     .width(iced::Length::Fill)
-                    .on_press(Message::ButtonPressed(token)),
+                    .height(iced::Length::Fixed(50.0)
+
+                )
+
+                                        .on_press(Message::ButtonPressed(token)),
             );
 
             if (i + 1) % 4 == 0 || i == button_tokens.len() - 1 {
-                // i == button_tokens.len() - 1 ensures the last button is added
                 content = content.push(row);
                 row = Row::new();
             }
