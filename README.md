@@ -28,7 +28,7 @@ Enter an expression (e.g., 5 + 3) or 'exit|clear':
 
 ## Installation of GUI App
 
-- clone repo
+
 ```sh
 git clone https://github.com/codeitlikemiley/calc
 cd calc
