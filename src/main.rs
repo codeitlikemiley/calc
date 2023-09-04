@@ -1,234 +1,249 @@
-use iced::widget::{Button, Column, Row, Text};
-use iced::{Element, Sandbox};
+use dioxus::events::*;
+use dioxus::html::input_data::keyboard_types::Key;
+use dioxus::prelude::*;
+use dioxus_desktop::{Config, WindowBuilder};
 
 fn main() {
-    let settings = iced::Settings {
-        window: iced::window::Settings {
-            size: (250, 300),
-            resizable: false,
-            ..Default::default()
-        },
-        ..Default::default()
+    let config = Config::new().with_window(
+        WindowBuilder::default()
+            .with_title("Calculator")
+            .with_resizable(false)
+            .with_inner_size(dioxus_desktop::LogicalSize::new(435.0, 554.0)),
+    );
+
+    dioxus_desktop::launch_cfg(app, config);
+}
+
+fn app(cx: Scope) -> Element {
+    let val = use_state(cx, || String::from("0"));
+
+    let input_digit = move |num: u8| {
+        if val.get() == "0" {
+            val.set(String::new());
+        }
+
+        val.make_mut().push_str(num.to_string().as_str());
     };
-    Calculator::run(settings);
-}
 
-#[derive(Debug, Clone, Copy)]
-enum Message {
-    ButtonPressed(char),
-}
+    let input_operator = move |key: &str| val.make_mut().push_str(key);
 
-enum Token {
-    Operand(f64),
-    Operator(char),
-    LeftParen,
-    RightParen,
-    Error(char),
-}
-
-struct Calculator {
-    display: String,
-    current_expression: String,
-    just_evaluated: bool,
-}
-
-impl Sandbox for Calculator {
-    type Message = Message;
-
-    fn new() -> Self {
-        Calculator {
-            display: String::from("0"),
-            current_expression: String::new(),
-            just_evaluated: false,
+    let handle_key_down_event = move |evt: KeyboardEvent| match evt.key() {
+        Key::Backspace => {
+            if !val.len() != 0 {
+                val.make_mut().pop();
+            }
         }
-    }
+        Key::Character(character) => match character.as_str() {
+            "+" => input_operator("+"),
+            "-" => input_operator("-"),
+            "/" => input_operator("/"),
+            "*" => input_operator("*"),
+            "0" => input_digit(0),
+            "1" => input_digit(1),
+            "2" => input_digit(2),
+            "3" => input_digit(3),
+            "4" => input_digit(4),
+            "5" => input_digit(5),
+            "6" => input_digit(6),
+            "7" => input_digit(7),
+            "8" => input_digit(8),
+            "9" => input_digit(9),
+            _ => {}
+        },
+        _ => {}
+    };
 
-    fn title(&self) -> String {
-        String::from("Calculator")
-    }
+    cx.render(rsx!(
+        style { include_str!("./assets/tailwind.css") }
+        div { class: "min-h-screen bg-gray-700 flex items-center justify-center",
+            div {
+                class: "bg-gray-800 border- border-gray-900 shadow-2xl rounded-bl-md rounded-br-md",
+                form {
+                    class:"border-b-2 border-gray-900",
+                    onkeydown: handle_key_down_event,
+                    input {
+                       class:"bg-transparent p-8 rounded-t-lg outline-none focus:bg-gray-700 text-3xl text-right text-white font-mono",
+                       disabled: true,
+                       value: "{val.to_string()}",
 
-    fn update(&mut self, message: Self::Message) {
-        match message {
-            Message::ButtonPressed(token) => {
-                match token {
-                    '=' => {
-                        // Evaluate the expression
-                        let tokens = tokenize(&self.current_expression.replace(" ", ""));
-                        let postfix_tokens = to_postfix(tokens);
-                        let result = evaluate_postfix(postfix_tokens);
-
-                        // Update display and clear current expression
-                        self.display = result.to_string();
-                        self.current_expression.clear();
-                        self.just_evaluated = true;
                     }
-                    'C' => {
-                        // Clear the expression and display
-                        self.current_expression.clear();
-                        self.display = "0".to_string();
-                        self.just_evaluated = false;
-                    }
-                    _ => {
-                        if self.just_evaluated {
-                            if token.is_digit(10) || token == '.' {
-                                self.current_expression.clear();
-                                self.display.clear();
-                            } else {
-                                self.current_expression = self.display.clone();
+                }
+                div { class:"p-6 text-gray-800 grid grid-cols-4 gap-4 text-xl",
+                    button {
+                        class:"font-mono col-span-1 bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                        onclick: move |_| {
+                            val.set(String::new());
+                            if !val.is_empty(){
+                                val.set("0".into());
                             }
-                            self.just_evaluated = false;
+                        },
+                        if val.is_empty() { "C" } else { "AC" }
                         }
-
-                        // Clear the leading "0" if any
-                        if self.display == "0" && (token.is_digit(10) || token == '.') {
-                            self.display.clear();
-                            self.current_expression.clear();
-                        }
-
-                        // Append the token to the current expression and update display
-                        self.current_expression.push(token);
-                        self.display.push(token);
+                    button {
+                        class:"font-mono bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                        onclick: move |_| {
+                            let temp = calc_val(val.as_str());
+                            if temp > 0.0 {
+                                val.set(format!("-{temp}"));
+                            } else {
+                                val.set(format!("{}", temp.abs()));
+                            }
+                        },
+                        "±"
                     }
+                    button {
+                        class:"font-mono bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                        onclick: move |_| {
+                              val.set(
+                              format!("{}", calc_val(val.as_str()) / 100.0)
+                              );
+                        },
+                        "%"
+                    }
+                    button {
+                        class:"font-mono bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_operator("/"), "÷"
+
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(1),
+                        "1"
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(2),
+                        "2"
+                    }
+                     button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(3),
+                        "3"
+                    }
+                    button {
+                        class:"font-mono bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_operator("*"),
+                        "*"
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(4),
+                        "4"
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(5),
+                        "5"
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(6),
+                        "6"
+                    }
+                    button {
+                        class:"font-mono bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_operator("-"),
+                        "-"
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(7),
+                        "7"
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(8),
+                        "8"
+                    }
+                    button {
+                        class:"font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(9),
+                        "9"
+                    }
+                    button {
+                        class:"font-mono bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_operator("+"),
+                        "+"
+                    }
+                    button {
+                        class:"font-mono col-span-2 bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| input_digit(0),
+                        "0"
+                    }
+                    button { class: "font-mono bg-gray-500 hover:bg-gray-400 rounded-full p-5 text-white",
+                        onclick: move |_| val.make_mut().push('.'), "."
+                    }
+                    button {
+                                class: "font-mono bg-amber-500 hover:bg-amber-400 rounded-full p-5 text-white",
+                                onclick: move |_| val.set(format!("{}", calc_val(val.as_str()))),
+                                "="
+                    }
+
+
                 }
             }
         }
-    }
 
-    fn view(&self) -> Element<Self::Message> {
-        let button_tokens = vec![
-            '7', '8', '9', '+', '4', '5', '6', '-', '1', '2', '3', '*', '(', ')', 'C', '0', '=',
-            '/',
-        ];
-        let mut content = Column::new().push(
-            Text::new(self.display.clone())
-                .size(36)
-                .width(iced::Length::Fill)
-                .height(iced::Length::Fixed(55.0)),
-        );
-
-        let mut row = Row::new();
-        for (i, &token) in button_tokens.iter().enumerate() {
-            row = row.push(
-                Button::new(Text::new(token.to_string()))
-                    .width(iced::Length::Fill)
-                    .height(iced::Length::Fixed(50.0)
-
-                )
-
-                                        .on_press(Message::ButtonPressed(token)),
-            );
-
-            if (i + 1) % 4 == 0 || i == button_tokens.len() - 1 {
-                content = content.push(row);
-                row = Row::new();
-            }
-        }
-
-        content.into()
-    }
+    ))
 }
 
-fn tokenize(input: &str) -> Vec<Token> {
-    let mut tokens = Vec::new();
-    let mut number = String::new();
+fn calc_val(val: &str) -> f64 {
+    let mut temp = String::new();
+    let mut operation = "+".to_string();
 
-    for c in input.chars() {
-        if c.is_digit(10) || c == '.' {
-            number.push(c);
-        } else {
-            if !number.is_empty() {
-                tokens.push(Token::Operand(number.parse().unwrap()));
-                number.clear();
-            }
+    let mut start_index = 0;
+    let mut temp_value;
+    let mut fin_index = 0;
 
-            match c {
-                '+' | '-' | '*' | '/' => tokens.push(Token::Operator(c)),
-                '(' => tokens.push(Token::LeftParen),
-                ')' => tokens.push(Token::RightParen),
-                _ => tokens.push(Token::Error(c)),
-            }
+    if &val[0..1] == "-" {
+        temp_value = String::from("-");
+        fin_index = 1;
+        start_index += 1;
+    } else {
+        temp_value = String::from("");
+    }
+
+    for c in val[fin_index..].chars() {
+        if c == '+' || c == '-' || c == '*' || c == '/' {
+            break;
         }
+        temp_value.push(c);
+        start_index += 1;
     }
 
-    if !number.is_empty() {
-        tokens.push(Token::Operand(number.parse().unwrap()));
+    let mut result = temp_value.parse::<f64>().unwrap();
+
+    if start_index + 1 >= val.len() {
+        return result;
     }
 
-    tokens
-}
-
-fn to_postfix(tokens: Vec<Token>) -> Vec<Token> {
-    let mut output = Vec::new();
-    let mut operators = Vec::new();
-
-    for token in tokens {
-        match token {
-            Token::Operand(_) => output.push(token),
-            Token::Operator(op) => {
-                while let Some(Token::Operator(top)) = operators.last() {
-                    if top == &'*'
-                        || top == &'/'
-                        || (top == &'+' && op != '-')
-                        || (top == &'-' && op != '+')
-                    {
-                        output.push(operators.pop().unwrap());
-                    } else {
-                        break;
-                    }
-                }
-                operators.push(token);
-            }
-            Token::LeftParen => operators.push(token),
-            Token::RightParen => {
-                while let Some(op) = operators.pop() {
-                    match op {
-                        Token::LeftParen => break,
-                        _ => output.push(op),
-                    }
-                }
-            }
-            Token::Error(_) => output.push(token),
-        }
-    }
-
-    while let Some(op) = operators.pop() {
-        output.push(op);
-    }
-
-    output
-}
-
-fn evaluate_postfix(tokens: Vec<Token>) -> f64 {
-    let mut stack: Vec<f64> = Vec::new();
-
-    for token in tokens {
-        match token {
-            Token::Operand(num) => stack.push(num),
-            Token::Operator(op) => {
-                if stack.len() < 2 {
-                    return f64::NAN;
-                }
-                let b = stack.pop().unwrap();
-                let a = stack.pop().unwrap();
-
-                let result = match op {
-                    '+' => a + b,
-                    '-' => a - b,
-                    '*' => a * b,
-                    '/' => a / b,
-                    _ => f64::NAN,
+    for c in val[start_index..].chars() {
+        if c == '+' || c == '-' || c == '*' || c == '/' {
+            if !temp.is_empty() {
+                match &operation as &str {
+                    "+" => result += temp.parse::<f64>().unwrap(),
+                    "-" => result -= temp.parse::<f64>().unwrap(),
+                    "*" => result *= temp.parse::<f64>().unwrap(),
+                    "/" => result /= temp.parse::<f64>().unwrap(),
+                    _ => unreachable!(),
                 };
-
-                stack.push(result);
             }
-            // We shouldn't have parentheses or errors in a postfix expression
-            Token::LeftParen | Token::RightParen | Token::Error(_) => return f64::NAN,
+            operation = c.to_string();
+            temp = String::new();
+        } else {
+            temp.push(c);
         }
     }
 
-    if stack.len() != 1 {
-        return f64::NAN;
+    if !temp.is_empty() {
+        match &operation as &str {
+            "+" => result += temp.parse::<f64>().unwrap(),
+            "-" => result -= temp.parse::<f64>().unwrap(),
+            "*" => result *= temp.parse::<f64>().unwrap(),
+            "/" => result /= temp.parse::<f64>().unwrap(),
+            _ => unreachable!(),
+        };
     }
 
-    stack.pop().unwrap()
+    result
 }
