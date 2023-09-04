@@ -26,6 +26,9 @@ Enter an expression (e.g., 5 + 3) or 'exit|clear':
 3+(2*2)-1 //6
 ```
 
+<img width="651" alt="Screenshot 2023-09-04 at 8 14 25 AM" src="https://github.com/codeitlikemiley/calc/assets/28816690/43304b02-2990-4658-a91f-eaa393e6c900">
+
+
 ## Installation of GUI App
 
 
