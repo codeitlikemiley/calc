@@ -247,3 +247,22 @@ fn calc_val(val: &str) -> f64 {
 
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::calc_val;
+
+    #[test]
+    fn test_calc_val() {
+        // test addition
+        assert_eq!(calc_val("1+2"), 3.0);
+        // test subtraction
+        assert_eq!(calc_val("1-2"), -1.0);
+        // test division
+        assert_eq!(calc_val("1/2"), 0.5);
+        // test multiplication
+        assert_eq!(calc_val("1*2"), 2.0);
+        // test multiple operations
+        assert_eq!(calc_val("1+2*3"), 9.0);
+    }
+}
