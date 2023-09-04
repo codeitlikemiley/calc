@@ -50,6 +50,21 @@ Note: if you will use both terminal and gui better alias gui to `calg`
 <img width="277" alt="Screenshot 2023-09-04 at 7 51 45 AM" src="https://github.com/codeitlikemiley/calc/assets/28816690/3148628d-3e50-48d8-8ea7-576ebaf850d7">
 
 
+## Install CrossPlatform Calculator with Dioxus + Rust
+
+```sh
+git clone https://github.com/codeitlikemiley/calc
+cd calc
+git checkout dioxus
+dx bundle --release
+# copy to your bin directory
+cd dist/bundle/
+# install using dmg file by double clicking it
+```
+- Usage , open with `cmd + space` and type `calculator`
+
+<img width="473" alt="Screenshot 2023-09-04 at 1 31 55 PM" src="https://github.com/codeitlikemiley/calc/assets/28816690/12e2bde4-d3a0-4390-a71a-7ca76a118421">
+
 ## Objectives
 
 ### Build a Simple REPL CLI `calc`
@@ -67,3 +82,8 @@ Note: if you will use both terminal and gui better alias gui to `calg`
 - [x] Show a Simple GUI Calculator using Iced
 - [x] Move Logic of Evaluating Expression to Update
 - [x] Add Test Basic Operations we can do
+
+### Build a CrossPlatform App with Dioxus
+- [x] use tailwindcss
+- [x] use logic of calculator
+- [x] build a simple crossplatform gui calculator
