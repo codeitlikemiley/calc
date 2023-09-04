@@ -1,8 +1,30 @@
-# Yet Another GUI Calculator Built on Rust
+# Yet Another Calculator Built on Rust
 
 [![Rust Build and Test](https://github.com/codeitlikemiley/calc/actions/workflows/rust.yml/badge.svg)](https://github.com/codeitlikemiley/calc/actions/workflows/rust.yml)
 
-<img width="277" alt="Screenshot 2023-09-04 at 7 51 45 AM" src="https://github.com/codeitlikemiley/calc/assets/28816690/3148628d-3e50-48d8-8ea7-576ebaf850d7">
+
+
+## Installation of calc Terminal
+
+```sh
+git clone https://github.com/codeitlikemiley/calc
+cd calc
+git checkout cli
+cargo build --release
+# copy to your bin directory
+cp target/release/calc ~/.local/bin/calc
+```
+
+## Usage of CLI
+
+```bash
+calc
+Enter an expression (e.g., 5 + 3) or 'exit|clear':
+3 + 5 // 8
+3 +   5 //8
+3+3+3 //9
+3+(2*2)-1 //6
+```
 
 ## Installation of GUI App
 
@@ -13,24 +35,21 @@ cd calc
 git checkout gui
 cargo build --release
 # copy to your bin directory
-cp target/release/calc ~/.local/bin
+cp target/release/calc ~/.local/bin/calg
 # copy to /Applications on Mac
+Note: if you will use both terminal and gui better alias gui to `calg`
 ```
 
-## Installation of calc Terminal
+## Usage of GUI Calculator
 
-```sh
-git clone https://github.com/codeitlikemiley/calc
-cd calc
-git checkout cli
-cargo build --release
-# copy to your bin directory
-cp target/release/calc ~/.local/bin
-```
+- invoke command `calg` to open it and start pressing buttons
+
+<img width="277" alt="Screenshot 2023-09-04 at 7 51 45 AM" src="https://github.com/codeitlikemiley/calc/assets/28816690/3148628d-3e50-48d8-8ea7-576ebaf850d7">
+
 
 ## Objectives
 
-### CLI Mode
+### Build a Simple REPL CLI `calc`
 
 - [x] Basic arithmetic operations
 - [x] Parentheses Operations
@@ -40,7 +59,9 @@ cp target/release/calc ~/.local/bin
 - [x] REPL mode
 - [x] use Arrow Key Up and Down to navigate through history
 
-### GUI  
-- [x] Used Iced to build GUI App
-- [x] Add Test 
+### Build a Simple GUI `calg`
+
+- [x] Show a Simple GUI Calculator using Iced
+- [x] Move Logic of Evaluating Expression to Update 
+- [x] Add Test Basic Operations we can do
 
